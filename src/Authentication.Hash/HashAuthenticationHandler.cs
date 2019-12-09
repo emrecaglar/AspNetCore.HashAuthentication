@@ -6,6 +6,9 @@ using Microsoft.Extensions.Options;
 using Microsoft.Net.Http.Headers;
 using System;
 using System.Linq;
+using System.Security.Claims;
+using System.Security.Cryptography;
+using System.Text;
 using System.Text.Encodings.Web;
 using System.Threading.Tasks;
 
@@ -52,23 +55,20 @@ namespace Authentication.Hash
                     Hash = credentials
                 };
 
-                await Events.ValidateCredentials(validateCredentialsContext);
+                string hashed = GetHash(Options.Secret, Options.Algorithm);
 
-                if (validateCredentialsContext.Result != null &&
-                    validateCredentialsContext.Result.Succeeded)
+                if (hashed.Equals(credentials, StringComparison.OrdinalIgnoreCase))
                 {
+                    await Events.ValidateCredentials(validateCredentialsContext);
+
                     var ticket = new AuthenticationTicket(validateCredentialsContext.Principal, Scheme.Name);
 
                     return AuthenticateResult.Success(ticket);
                 }
-
-                if (validateCredentialsContext.Result != null &&
-                    validateCredentialsContext.Result.Failure != null)
+                else
                 {
-                    return AuthenticateResult.Fail(validateCredentialsContext.Result.Failure);
+                    return AuthenticateResult.Fail("Wrong hash");
                 }
-
-                return AuthenticateResult.NoResult();
             }
             catch (Exception ex)
             {
@@ -88,13 +88,36 @@ namespace Authentication.Hash
             }
         }
 
+        private string GetHash(string secret, Sha algorithm)
+        {
+            HashAlgorithm hashAlgorithm;
+
+            switch (algorithm)
+            {
+                case Sha.Sha1:
+                    hashAlgorithm = SHA1.Create();
+                    break;
+                case Sha.Sha256:
+                    hashAlgorithm = SHA256.Create();
+                    break;
+                case Sha.Sha512:
+                    hashAlgorithm = SHA512.Create();
+                    break;
+                default:
+                    hashAlgorithm = SHA256.Create();
+                    break;
+            }
+
+            byte[] bytes = hashAlgorithm.ComputeHash(Encoding.ASCII.GetBytes(secret));
+
+            return string.Concat(bytes.Select(x => x.ToString("X2")).ToArray());
+        }
+
         protected override Task HandleChallengeAsync(AuthenticationProperties properties)
         {
             Response.StatusCode = 401;
 
-            var headerValue = $"{HashAuthenticationDefaults.AuthenticationScheme} 123";
-
-            Response.Headers.Append(HeaderNames.WWWAuthenticate, headerValue);
+            Response.Headers.Append(HeaderNames.WWWAuthenticate, Request.Headers[HeaderNames.Authorization]);
 
             return Task.CompletedTask;
         }
