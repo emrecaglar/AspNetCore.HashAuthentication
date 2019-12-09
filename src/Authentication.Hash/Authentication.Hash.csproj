@@ -1,7 +1,12 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>netcoreapp2.2</TargetFramework>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+    <Product>HashAuthentication</Product>
+    <Description>HashAuthentication extension method for AspNetCore authentication</Description>
+    <PackageTags>aspnetcore;authentication;security;hashauth</PackageTags>
   </PropertyGroup>
 
   <ItemGroup>
