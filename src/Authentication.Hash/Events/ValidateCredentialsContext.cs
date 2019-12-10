@@ -14,12 +14,13 @@ namespace Authentication.Hash.Events
             HashAuthenticationOptions options)
             : base(context, scheme, options)
         {
-            Principal = new ClaimsPrincipal(new ClaimsIdentity(new[]
-            {
-                new Claim("hash", context.Request.Headers["Authorization"].ToString().Substring(scheme.Name.Length).Trim())
-            }, scheme.Name));
+            
         }
 
-        public string Hash { get; set; }
+        public string Secret { get; set; }
+
+        public Sha Algorithm { get; set; }
+
+        public string AuthorizationHeader { get; set; }
     }
 }

@@ -52,21 +52,38 @@ namespace Authentication.Hash
             {
                 var validateCredentialsContext = new ValidateCredentialsContext(Context, Scheme, Options)
                 {
-                    Hash = credentials
+                    Secret = Options.Secret,
+                    Algorithm = Options.Algorithm,
+                    AuthorizationHeader = credentials
                 };
 
                 string hashed = GetHash(Options.Secret, Options.Algorithm);
 
                 if (hashed.Equals(credentials, StringComparison.OrdinalIgnoreCase))
                 {
-                    await Events.ValidateCredentials(validateCredentialsContext);
-
                     var ticket = new AuthenticationTicket(validateCredentialsContext.Principal, Scheme.Name);
+
+                    await Events.HashValidated(validateCredentialsContext);
+
+                    if (validateCredentialsContext.Result != null)
+                    {
+                        return validateCredentialsContext.Result;
+                    }
 
                     return AuthenticateResult.Success(ticket);
                 }
                 else
                 {
+                    await Events.AuthenticationFailed(new HashAuthenticationFailedContext(Context, Scheme, Options)
+                    {
+                        Exception = new Exception("Wrong hash")
+                    });
+
+                    if (validateCredentialsContext.Result != null)
+                    {
+                        return validateCredentialsContext.Result;
+                    }
+
                     return AuthenticateResult.Fail("Wrong hash");
                 }
             }
@@ -117,7 +134,9 @@ namespace Authentication.Hash
         {
             Response.StatusCode = 401;
 
-            Response.Headers.Append(HeaderNames.WWWAuthenticate, Request.Headers[HeaderNames.Authorization]);
+            string realm = $"Hash realm=\"{Request.Headers[HeaderNames.Authorization]}\", error=\"invalid_hash\"";
+
+            Response.Headers.Append(HeaderNames.WWWAuthenticate, realm);
 
             return Task.CompletedTask;
         }

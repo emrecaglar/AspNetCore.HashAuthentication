@@ -7,10 +7,10 @@ namespace Authentication.Hash.Events
     {
         public Func<HashAuthenticationFailedContext, Task> OnAuthenticationFailed { get; set; } = context => Task.CompletedTask;
 
-        public Func<ValidateCredentialsContext, Task> OnValidateCredentials { get; set; } = context => Task.CompletedTask;
+        public Func<ValidateCredentialsContext, Task> OnValidated { get; set; } = context => Task.CompletedTask;
 
         public virtual Task AuthenticationFailed(HashAuthenticationFailedContext context) => OnAuthenticationFailed(context);
 
-        public virtual Task ValidateCredentials(ValidateCredentialsContext context) => OnValidateCredentials(context);
+        public virtual Task HashValidated(ValidateCredentialsContext context) => OnValidated(context);
     }
 }

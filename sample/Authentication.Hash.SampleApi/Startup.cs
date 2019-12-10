@@ -34,7 +34,7 @@ namespace Authentication.Hash.SampleApi
                         options.Algorithm = Sha.Sha256;
                         options.Events = new HashAuthenticationEvents 
                         {
-                              OnValidateCredentials = context => 
+                              OnValidated = context => 
                               {
                                   return Task.CompletedTask;
                               }
